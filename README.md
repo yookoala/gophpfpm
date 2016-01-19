@@ -1,5 +1,4 @@
-gophpfpm
-========
+# gophpfpm [![Travis](https://travis-ci.org/yookoala/gophpfpm.svg)][travis] [![GoDoc](https://godoc.org/github.com/yookoala/gophpfpm?status.svg)][godoc]
 
 **gophpfpm** is a minimalistic php-fpm process manager written
 in [go][golang].
@@ -10,6 +9,8 @@ and listen to 1 address only.
 This is a fringe case, I know. Just hope it might be useful for
 someone else.
 
+[godoc]: https://godoc.org/github.com/yookoala/gophpfpm
+[travis]: https://travis-ci.org/yookoala/gophpfpm
 [golang]: https://golang.org
 
 Usage
