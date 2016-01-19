@@ -223,10 +223,12 @@ func (proc *Process) Wait() (err error) {
 	log.Printf("Wait: process pid: %#v", proc.cmd.Process.Pid)
 	for {
 		if err = proc.cmd.Process.Signal(syscall.Signal(0)); err != nil {
-			if err.Error() == "os: process already finished" {
+			log.Printf("error here after wait: %#v", err.Error())
+			switch err.Error() {
+			case "os: process already finished":
+				fallthrough
+			case "no such process":
 				err = nil
-			} else {
-				err = fmt.Errorf("fail to find the process: %v", err)
 			}
 			break
 		} else {
