@@ -22,8 +22,23 @@ func init() {
 
 func TestNew(t *testing.T) {
 	path := "/usr/sbin/php5-fpm"
-	phpfpm := gophpfpm.NewProcess(path)
-	if want, have := path, phpfpm.Exec; want != have {
+	process := gophpfpm.NewProcess(path)
+	if want, have := path, process.Exec; want != have {
+		t.Errorf("expected %#v, got %#v", want, have)
+	}
+}
+
+func TestProcess_SetPrefix(t *testing.T) {
+	path := "/usr/sbin/php5-fpm"
+	process := gophpfpm.NewProcess(path)
+	process.SetDatadir(basepath + "/var")
+	if want, have := basepath+"/var/phpfpm.pid", process.PidFile; want != have {
+		t.Errorf("expected %#v, got %#v", want, have)
+	}
+	if want, have := basepath+"/var/phpfpm.error_log", process.ErrorLog; want != have {
+		t.Errorf("expected %#v, got %#v", want, have)
+	}
+	if want, have := basepath+"/var/phpfpm.sock", process.Listen; want != have {
 		t.Errorf("expected %#v, got %#v", want, have)
 	}
 }
