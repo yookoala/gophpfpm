@@ -1,10 +1,10 @@
 package gophpfpm_test
 
 import (
-	"io"
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/yookoala/gophpfpm"
 )
@@ -92,33 +92,23 @@ func TestProcess_StartStop(t *testing.T) {
 	path := pathToPhpFpm
 	process := gophpfpm.NewProcess(path)
 	process.SetDatadir(basepath + "/var")
-	process.SaveConfig(basepath + "/etc/phpfpm_test_startstop.conf")
+	process.SaveConfig(basepath + "/etc/test.startstop.conf")
 
-	var err error
-	var stdout, stderr io.ReadCloser
-
-	if stdout, stderr, err = process.Start(); err != nil {
-		t.Errorf("unexpected error: %#v", err.Error())
-		if stdout != nil {
-			stdout.Close()
-		}
-		if stderr != nil {
-			stderr.Close()
-		}
+	if err := process.Start(); err != nil {
+		t.Errorf("unexpected error: %s", err.Error())
 		return
 	}
-	defer stdout.Close()
-	defer stderr.Close()
 
 	go func() {
 		// do something that needs phpfpm
 		// ...
+		time.Sleep(time.Millisecond * 50)
 		if err := process.Stop(); err != nil {
 			panic(err)
 		}
 	}()
 
-	if _, err := process.Wait(); err != nil {
+	if err := process.Wait(); err != nil {
 		t.Errorf("unexpected error: %#v", err.Error())
 	}
 }
@@ -134,12 +124,13 @@ func ExampleProcess() {
 	process.SetDatadir(basepath + "/var")
 
 	// save the config file to basepath + "/etc/php-fpm.conf"
-	process.SaveConfig(basepath + "/etc/php-fpm.conf")
+	process.SaveConfig(basepath + "/etc/example.conf")
 	process.Start()
 
 	go func() {
 		// do something that needs phpfpm
 		// ...
+		time.Sleep(time.Millisecond * 50)
 		process.Stop()
 	}()
 

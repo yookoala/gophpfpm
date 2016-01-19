@@ -2,12 +2,15 @@ package gophpfpm
 
 import (
 	"fmt"
-	"io"
+	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"os/exec"
 	"path"
 	"regexp"
+	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/go-ini/ini"
@@ -87,38 +90,85 @@ func (proc *Process) SetDatadir(prefix string) {
 
 // Start starts the php-fpm process
 // in foreground mode instead of daemonize
-func (proc *Process) Start() (stdout, stderr io.ReadCloser, err error) {
+func (proc *Process) Start() (err error) {
 	proc.cmd = &exec.Cmd{
 		Path: proc.Exec,
 		Args: append([]string{proc.Exec},
 			"--fpm-config", proc.ConfigFile,
-			"-F",  // start foreground
 			"-n",  // no php.ini file
 			"-e"), // extended information
 	}
 
-	stdout, err = proc.cmd.StdoutPipe()
+	log.Printf("Start: before starting command")
+
+	if cmbOut, err := proc.cmd.CombinedOutput(); err != nil {
+		var ok bool
+		var exitErr *exec.ExitError
+		if exitErr, ok = err.(*exec.ExitError); !ok {
+			// no an exit error
+			return err
+		}
+		if !exitErr.ProcessState.Success() {
+			// unsuccessful exitErr
+			return fmt.Errorf("unsuccessful exit. error %s\noutput:\n%s",
+				exitErr.ProcessState, cmbOut)
+		}
+	}
+
+	log.Printf("Start: process pid: %#v", proc.cmd.Process.Pid)
+
+	pid := <-proc.waitPid()
+	spawned, err := os.FindProcess(pid)
 	if err != nil {
 		return
 	}
+	proc.cmd.Process = spawned
+	log.Printf("Start: spawned process pid: %#v", proc.cmd.Process.Pid)
 
-	stderr, err = proc.cmd.StderrPipe()
-	if err != nil {
-		return
-	}
-
-	err = proc.cmd.Start()
-	if err != nil {
-		return
-	}
-
+	// wait until the service is connectable
+	// or time out
 	select {
-	case <-time.After(time.Second * 4):
-		err = fmt.Errorf("time out")
 	case <-proc.waitConn():
+		// do nothing
+	case <-time.After(time.Second * 10):
+		// wait 10 seconds or timeout
+		err = fmt.Errorf("time out")
 	}
 
 	return
+}
+
+// read pid from pid
+func (proc *Process) pid() (pid int, err error) {
+	f, err := os.Open(proc.PidFile)
+	if err != nil {
+		return
+	}
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return
+	}
+
+	pid64, err := strconv.ParseInt(string(b), 10, 64)
+	pid = int(pid64)
+	return
+}
+
+// wait until pid file readable
+func (proc *Process) waitPid() <-chan int {
+	cout := make(chan int)
+	go func() {
+		for {
+			if pid, err := proc.pid(); err != nil {
+				time.Sleep(time.Millisecond * 2)
+			} else {
+				cout <- pid
+				break
+			}
+		}
+	}()
+	return cout
 }
 
 func (proc *Process) waitConn() <-chan net.Conn {
@@ -158,10 +208,24 @@ func (proc *Process) Address() (network, address string) {
 // Stop stops the php-fpm process with SIGINT
 // instead of killing
 func (proc *Process) Stop() error {
+	log.Printf("Stop: process pid: %#v", proc.cmd.Process.Pid)
 	return proc.cmd.Process.Signal(os.Interrupt)
 }
 
 // Wait wait for the process to finish
-func (proc *Process) Wait() (*os.ProcessState, error) {
-	return proc.cmd.Process.Wait()
+func (proc *Process) Wait() (err error) {
+	log.Printf("Wait: process pid: %#v", proc.cmd.Process.Pid)
+	for {
+		if err = proc.cmd.Process.Signal(syscall.Signal(0)); err != nil {
+			if err.Error() == "os: process already finished" {
+				err = nil
+			} else {
+				err = fmt.Errorf("fail to find the process: %v", err)
+			}
+			break
+		} else {
+			time.Sleep(time.Millisecond * 2)
+		}
+	}
+	return
 }
