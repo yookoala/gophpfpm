@@ -47,22 +47,3 @@ func ExampleProcess() {
 
 	// Output:
 }
-
-/*
-// config to save pidfile, log to "/home/foobar/var"
-// also have the socket file "/home/foobar/var/php-fpm.sock"
-phpfpm.Prefix("/home/foobar/var")
-
-// save the config file to "/home/foobar/etc/php-fpm.conf"
-phpfpm.GenConfig("/home/foobar/etc/php-fpm.conf")
-phpfpm.Start()
-
-go func() {
-  // do something that needs phpfpm
-  // ...
-  phpfpm.Stop()
-}()
-
-phpfpm.Wait()
-
-*/
