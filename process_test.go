@@ -32,9 +32,11 @@ func ExampleProcess() {
 
 	process := gophpfpm.NewProcess("/usr/sbin/php5-fpm")
 
-	// config to save pidfile, log to basepath + "/var"
-	// also have the socket file basepath + "/var/php-fpm.sock"
-	process.SetPrefix(basepath + "/var")
+	// SetDatadir equals to running these 3 settings:
+	// process.PidFile  = basepath + "/phpfpm.pid"
+	// process.ErrorLog = basepath + "/phpfpm.error_log"
+	// process.Listen   = basepath + "/phpfpm.sock"
+	process.SetDatadir(basepath + "/var")
 
 	// save the config file to basepath + "/etc/php-fpm.conf"
 	process.SaveConfig(basepath + "/etc/php-fpm.conf")

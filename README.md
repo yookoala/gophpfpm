@@ -27,7 +27,7 @@ func main() {
 
   // config to save pidfile, log to "/home/foobar/var"
   // also have the socket file "/home/foobar/var/php-fpm.sock"
-  phpfpm.SetPrefix("/home/foobar/var")
+  phpfpm.SetDatadir("/home/foobar/var")
 
   // save the config file to basepath + "/etc/php-fpm.conf"
   phpfpm.SaveConfig(basepath + "/etc/php-fpm.conf")
