@@ -23,7 +23,7 @@ import "github.com/yookoala/gophpfpm"
 
 func main() {
 
-  phpfpm := gophpfpm.New("/usr/sbin/php5-fpm")
+  phpfpm := gophpfpm.NewProcess("/usr/sbin/php5-fpm")
 
   // config to save pidfile, log to "/home/foobar/var"
   // also have the socket file "/home/foobar/var/php-fpm.sock"

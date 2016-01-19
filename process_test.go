@@ -22,7 +22,7 @@ func init() {
 
 func TestNew(t *testing.T) {
 	path := "/usr/sbin/php5-fpm"
-	phpfpm := gophpfpm.New(path)
+	phpfpm := gophpfpm.NewProcess(path)
 	if want, have := path, phpfpm.Exec; want != have {
 		t.Errorf("expected %#v, got %#v", want, have)
 	}
@@ -30,7 +30,7 @@ func TestNew(t *testing.T) {
 
 func ExampleProcess() {
 
-	process := gophpfpm.New("/usr/sbin/php5-fpm")
+	process := gophpfpm.NewProcess("/usr/sbin/php5-fpm")
 
 	// config to save pidfile, log to basepath + "/var"
 	// also have the socket file basepath + "/var/php-fpm.sock"

@@ -24,8 +24,8 @@ type Process struct {
 	ErrorLog string
 }
 
-// New creates a new process descriptor
-func New(phpFpm string) *Process {
+// NewProcess creates a new process descriptor
+func NewProcess(phpFpm string) *Process {
 	return &Process{
 		Exec: phpFpm,
 	}
