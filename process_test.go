@@ -2,6 +2,7 @@ package gophpfpm_test
 
 import (
 	"os"
+	"path"
 	"testing"
 
 	"github.com/yookoala/gophpfpm"
@@ -15,6 +16,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	basepath = path.Join(basepath, "_test")
 }
 
 func TestNew(t *testing.T) {
@@ -27,23 +30,23 @@ func TestNew(t *testing.T) {
 
 func ExampleProcess() {
 
-	phpfpm := gophpfpm.New("/usr/sbin/php5-fpm")
+	process := gophpfpm.New("/usr/sbin/php5-fpm")
 
 	// config to save pidfile, log to basepath + "/var"
 	// also have the socket file basepath + "/var/php-fpm.sock"
-	phpfpm.SetPrefix(basepath + "/var")
+	process.SetPrefix(basepath + "/var")
 
 	// save the config file to basepath + "/etc/php-fpm.conf"
-	phpfpm.SaveConfig(basepath + "/etc/php-fpm.conf")
-	phpfpm.Start()
+	process.SaveConfig(basepath + "/etc/php-fpm.conf")
+	process.Start()
 
 	go func() {
 		// do something that needs phpfpm
 		// ...
-		phpfpm.Stop()
+		process.Stop()
 	}()
 
-	phpfpm.Wait()
+	process.Wait()
 
 	// Output:
 }
