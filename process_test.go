@@ -1,6 +1,7 @@
 package gophpfpm_test
 
 import (
+	"io"
 	"os"
 	"path"
 	"testing"
@@ -40,6 +41,41 @@ func TestProcess_SetPrefix(t *testing.T) {
 	}
 	if want, have := basepath+"/var/phpfpm.sock", process.Listen; want != have {
 		t.Errorf("expected %#v, got %#v", want, have)
+	}
+}
+
+func TestProcess_StartStop(t *testing.T) {
+	path := "/usr/sbin/php5-fpm"
+	process := gophpfpm.NewProcess(path)
+	process.SetDatadir(basepath + "/var")
+	process.SaveConfig(basepath + "/etc/phpfpm_test_startstop.conf")
+
+	var err error
+	var stdout, stderr io.ReadCloser
+
+	if stdout, stderr, err = process.Start(); err != nil {
+		t.Errorf("unexpected error: %#v", err.Error())
+		if stdout != nil {
+			stdout.Close()
+		}
+		if stderr != nil {
+			stderr.Close()
+		}
+		return
+	}
+	defer stdout.Close()
+	defer stderr.Close()
+
+	go func() {
+		// do something that needs phpfpm
+		// ...
+		if err := process.Stop(); err != nil {
+			panic(err)
+		}
+	}()
+
+	if _, err := process.Wait(); err != nil {
+		t.Errorf("unexpected error: %#v", err.Error())
 	}
 }
 

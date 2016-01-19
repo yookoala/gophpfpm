@@ -1,6 +1,9 @@
 package gophpfpm
 
 import (
+	"fmt"
+	"io"
+	"net"
 	"os"
 	"os/exec"
 	"path"
@@ -83,7 +86,7 @@ func (proc *Process) SetDatadir(prefix string) {
 
 // Start starts the php-fpm process
 // in foreground mode instead of daemonize
-func (proc *Process) Start() (err error) {
+func (proc *Process) Start() (stdout, stderr io.ReadCloser, err error) {
 	proc.cmd = &exec.Cmd{
 		Path: proc.Exec,
 		Args: append([]string{proc.Exec},
@@ -91,18 +94,45 @@ func (proc *Process) Start() (err error) {
 			"-F",  // start foreground
 			"-n",  // no php.ini file
 			"-e"), // extended information
-		Stdout: os.Stdout, // for now
-		Stderr: os.Stderr, // for now
 	}
+
+	stdout, err = proc.cmd.StdoutPipe()
+	if err != nil {
+		return
+	}
+
+	stderr, err = proc.cmd.StderrPipe()
+	if err != nil {
+		return
+	}
+
 	err = proc.cmd.Start()
 	if err != nil {
 		return
 	}
 
-	// FIXME: instead of waiting time, should loop check
-	// if the process is ready
-	time.Sleep(time.Millisecond * 100)
+	select {
+	case <-time.After(time.Second * 4):
+		err = fmt.Errorf("time out")
+	case <-proc.waitConn():
+	}
+
 	return
+}
+
+func (proc *Process) waitConn() <-chan net.Conn {
+	chanConn := make(chan net.Conn)
+	go func() {
+		for {
+			if conn, err := net.Dial("unix", proc.Listen); err != nil {
+				time.Sleep(time.Millisecond * 2)
+			} else {
+				chanConn <- conn
+				break
+			}
+		}
+	}()
+	return chanConn
 }
 
 // Stop stops the php-fpm process with SIGINT
