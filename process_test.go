@@ -9,7 +9,7 @@ import (
 	"github.com/yookoala/gophpfpm"
 )
 
-var basepath string
+var basepath, pathToPhpFpm string
 
 func init() {
 	var err error
@@ -19,10 +19,12 @@ func init() {
 	}
 
 	basepath = path.Join(basepath, "_test")
+
+	pathToPhpFpm = "/usr/sbin/php5-fpm"
 }
 
 func TestNew(t *testing.T) {
-	path := "/usr/sbin/php5-fpm"
+	path := pathToPhpFpm
 	process := gophpfpm.NewProcess(path)
 	if want, have := path, process.Exec; want != have {
 		t.Errorf("expected %#v, got %#v", want, have)
@@ -30,7 +32,7 @@ func TestNew(t *testing.T) {
 }
 
 func TestProcess_SetPrefix(t *testing.T) {
-	path := "/usr/sbin/php5-fpm"
+	path := pathToPhpFpm
 	process := gophpfpm.NewProcess(path)
 	process.SetDatadir(basepath + "/var")
 	if want, have := basepath+"/var/phpfpm.pid", process.PidFile; want != have {
@@ -45,7 +47,7 @@ func TestProcess_SetPrefix(t *testing.T) {
 }
 
 func TestProcess_StartStop(t *testing.T) {
-	path := "/usr/sbin/php5-fpm"
+	path := pathToPhpFpm
 	process := gophpfpm.NewProcess(path)
 	process.SetDatadir(basepath + "/var")
 	process.SaveConfig(basepath + "/etc/phpfpm_test_startstop.conf")
@@ -81,7 +83,7 @@ func TestProcess_StartStop(t *testing.T) {
 
 func ExampleProcess() {
 
-	process := gophpfpm.NewProcess("/usr/sbin/php5-fpm")
+	process := gophpfpm.NewProcess(pathToPhpFpm)
 
 	// SetDatadir equals to running these 3 settings:
 	// process.PidFile  = basepath + "/phpfpm.pid"
