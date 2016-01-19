@@ -26,6 +26,9 @@ type Process struct {
 	// path to the config file
 	ConfigFile string
 
+	// username of the FastCGI process
+	User string
+
 	// The address on which to accept FastCGI requests.
 	// Valid syntaxes are: 'ip.add.re.ss:port', 'port',
 	// '/path/to/unix/socket'. This option is mandatory for each pool.
@@ -70,6 +73,9 @@ func (proc *Process) Config() (f *ini.File) {
 	f.Section("www").NewKey("pm.start_servers", "2")
 	f.Section("www").NewKey("pm.min_spare_servers", "1")
 	f.Section("www").NewKey("pm.max_spare_servers", "3")
+	if proc.User != "" {
+		f.Section("www").NewKey("user", proc.User)
+	}
 	return
 }
 

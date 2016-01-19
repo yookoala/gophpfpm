@@ -9,7 +9,7 @@ import (
 	"github.com/yookoala/gophpfpm"
 )
 
-var basepath, pathToPhpFpm string
+var username, basepath, pathToPhpFpm string
 
 func init() {
 	var err error
@@ -17,10 +17,12 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
 	basepath = path.Join(basepath, "_test")
 
+	// FIXME: should be defined in environment
 	pathToPhpFpm = "/usr/sbin/php5-fpm"
+
+	username = os.Getenv("USER")
 }
 
 func TestNew(t *testing.T) {
@@ -92,6 +94,7 @@ func TestProcess_StartStop(t *testing.T) {
 	path := pathToPhpFpm
 	process := gophpfpm.NewProcess(path)
 	process.SetDatadir(basepath + "/var")
+	process.User = username
 	process.SaveConfig(basepath + "/etc/test.startstop.conf")
 
 	if err := process.Start(); err != nil {
@@ -122,6 +125,7 @@ func ExampleProcess() {
 	// process.ErrorLog = basepath + "/phpfpm.error_log"
 	// process.Listen   = basepath + "/phpfpm.sock"
 	process.SetDatadir(basepath + "/var")
+	process.User = username
 
 	// save the config file to basepath + "/etc/php-fpm.conf"
 	process.SaveConfig(basepath + "/etc/example.conf")
