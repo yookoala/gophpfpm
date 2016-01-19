@@ -1,6 +1,13 @@
 package gophpfpm
 
-import "github.com/go-ini/ini"
+import (
+	"os"
+	"os/exec"
+	"path"
+	"time"
+
+	"github.com/go-ini/ini"
+)
 
 // Process describes a minimalistic php-fpm config
 // that runs only 1 pool
@@ -22,6 +29,9 @@ type Process struct {
 
 	// path of the error log
 	ErrorLog string
+
+	// cmd stores the command of the running process
+	cmd *exec.Cmd
 }
 
 // NewProcess creates a new process descriptor
@@ -56,21 +66,52 @@ func (proc *Process) Config() (f *ini.File) {
 	return
 }
 
-// SetPrefix sets default config values according
+// SetDatadir sets default config values according
 // with reference to the folder prefix
-func (proc *Process) SetPrefix(prefix string) {
+//
+// Equals to running these 3 statements:
+//   process.PidFile  = basepath + "/phpfpm.pid"
+//   process.ErrorLog = basepath + "/phpfpm.error_log"
+//   process.Listen   = basepath + "/phpfpm.sock"
+func (proc *Process) SetDatadir(prefix string) {
+	// FIXME: add error if the prefix folder doesn't exists
+	// or is not a folder
+	proc.PidFile = path.Join(prefix, "phpfpm.pid")
+	proc.ErrorLog = path.Join(prefix, "phpfpm.error_log")
+	proc.Listen = path.Join(prefix, "phpfpm.sock")
 }
 
 // Start starts the php-fpm process
 // in foreground mode instead of daemonize
-func (proc *Process) Start() {
+func (proc *Process) Start() (err error) {
+	proc.cmd = &exec.Cmd{
+		Path: proc.Exec,
+		Args: append([]string{proc.Exec},
+			"--fpm-config", proc.ConfigFile,
+			"-F",  // start foreground
+			"-n",  // no php.ini file
+			"-e"), // extended information
+		Stdout: os.Stdout, // for now
+		Stderr: os.Stderr, // for now
+	}
+	err = proc.cmd.Start()
+	if err != nil {
+		return
+	}
+
+	// FIXME: instead of waiting time, should loop check
+	// if the process is ready
+	time.Sleep(time.Millisecond * 100)
+	return
 }
 
 // Stop stops the php-fpm process with SIGINT
 // instead of killing
-func (proc *Process) Stop() {
+func (proc *Process) Stop() error {
+	return proc.cmd.Process.Signal(os.Interrupt)
 }
 
 // Wait wait for the process to finish
-func (proc *Process) Wait() {
+func (proc *Process) Wait() (*os.ProcessState, error) {
+	return proc.cmd.Process.Wait()
 }
