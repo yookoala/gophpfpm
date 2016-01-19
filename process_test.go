@@ -46,6 +46,48 @@ func TestProcess_SetPrefix(t *testing.T) {
 	}
 }
 
+func TestProcess_Address(t *testing.T) {
+	var network, address string
+	process := &gophpfpm.Process{}
+
+	process.Listen = "192.168.123.456:12345"
+	network, address = process.Address()
+	if want, have := "tcp", network; want != have {
+		t.Errorf("expected %#v; got %#v", want, have)
+	}
+	if want, have := "192.168.123.456:12345", address; want != have {
+		t.Errorf("expected %#v; got %#v", want, have)
+	}
+
+	process.Listen = "12345"
+	network, address = process.Address()
+	if want, have := "tcp", network; want != have {
+		t.Errorf("expected %#v; got %#v", want, have)
+	}
+	if want, have := ":12345", address; want != have {
+		t.Errorf("expected %#v; got %#v", want, have)
+	}
+
+	process.Listen = "hello.sock"
+	network, address = process.Address()
+	if want, have := "unix", network; want != have {
+		t.Errorf("expected %#v; got %#v", want, have)
+	}
+	if want, have := "hello.sock", address; want != have {
+		t.Errorf("expected %#v; got %#v", want, have)
+	}
+
+	process.Listen = "/path/to/hello.sock"
+	network, address = process.Address()
+	if want, have := "unix", network; want != have {
+		t.Errorf("expected %#v; got %#v", want, have)
+	}
+	if want, have := "/path/to/hello.sock", address; want != have {
+		t.Errorf("expected %#v; got %#v", want, have)
+	}
+
+}
+
 func TestProcess_StartStop(t *testing.T) {
 	path := pathToPhpFpm
 	process := gophpfpm.NewProcess(path)

@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"time"
 
 	"github.com/go-ini/ini"
@@ -124,7 +125,7 @@ func (proc *Process) waitConn() <-chan net.Conn {
 	chanConn := make(chan net.Conn)
 	go func() {
 		for {
-			if conn, err := net.Dial("unix", proc.Listen); err != nil {
+			if conn, err := net.Dial(proc.Address()); err != nil {
 				time.Sleep(time.Millisecond * 2)
 			} else {
 				chanConn <- conn
@@ -133,6 +134,25 @@ func (proc *Process) waitConn() <-chan net.Conn {
 		}
 	}()
 	return chanConn
+}
+
+// Address returns networkk and address that fits
+// the use of either net.Dial or net.Listen
+func (proc *Process) Address() (network, address string) {
+	reIP := regexp.MustCompile("^(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\\:(\\d{2,5}$)")
+	rePort := regexp.MustCompile("^(\\d+)$")
+	switch {
+	case reIP.MatchString(proc.Listen):
+		network = "tcp"
+		address = proc.Listen
+	case rePort.MatchString(proc.Listen):
+		network = "tcp"
+		address = ":" + proc.Listen
+	default:
+		network = "unix"
+		address = proc.Listen
+	}
+	return
 }
 
 // Stop stops the php-fpm process with SIGINT
