@@ -3,7 +3,6 @@ package gophpfpm
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -105,8 +104,6 @@ func (proc *Process) Start() (err error) {
 			"-e"), // extended information
 	}
 
-	log.Printf("Start: before starting command")
-
 	if cmbOut, err := proc.cmd.CombinedOutput(); err != nil {
 		var ok bool
 		var exitErr *exec.ExitError
@@ -121,15 +118,12 @@ func (proc *Process) Start() (err error) {
 		}
 	}
 
-	log.Printf("Start: process pid: %#v", proc.cmd.Process.Pid)
-
 	pid := <-proc.waitPid()
 	spawned, err := os.FindProcess(pid)
 	if err != nil {
 		return
 	}
 	proc.cmd.Process = spawned
-	log.Printf("Start: spawned process pid: %#v", proc.cmd.Process.Pid)
 
 	// wait until the service is connectable
 	// or time out
@@ -214,16 +208,13 @@ func (proc *Process) Address() (network, address string) {
 // Stop stops the php-fpm process with SIGINT
 // instead of killing
 func (proc *Process) Stop() error {
-	log.Printf("Stop: process pid: %#v", proc.cmd.Process.Pid)
 	return proc.cmd.Process.Signal(os.Interrupt)
 }
 
 // Wait wait for the process to finish
 func (proc *Process) Wait() (err error) {
-	log.Printf("Wait: process pid: %#v", proc.cmd.Process.Pid)
 	for {
 		if err = proc.cmd.Process.Signal(syscall.Signal(0)); err != nil {
-			log.Printf("error here after wait: %#v", err.Error())
 			switch err.Error() {
 			case "os: process already finished":
 				fallthrough
