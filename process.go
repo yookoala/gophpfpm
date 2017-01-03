@@ -67,6 +67,7 @@ func (proc *Process) Config() (f *ini.File) {
 	f.Section("global").NewKey("error_log", proc.ErrorLog)
 	f.NewSection("www")
 	f.Section("www").NewKey("listen", proc.Listen)
+	f.Section("www").NewKey("security.limit_extensions", "")
 	f.Section("www").NewKey("pm", "dynamic")
 	f.Section("www").NewKey("pm.max_children", "5")
 	f.Section("www").NewKey("pm.start_servers", "2")
