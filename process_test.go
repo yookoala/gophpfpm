@@ -19,8 +19,11 @@ func init() {
 	}
 	basepath = path.Join(basepath, "_test")
 
-	// FIXME: should be defined in environment
+	// defined in environment
 	pathToPhpFpm = "/usr/sbin/php5-fpm"
+	if envPath := os.Getenv("PHPFPM_PATH"); envPath != "" {
+		pathToPhpFpm = envPath
+	}
 
 	username = os.Getenv("USER")
 }
